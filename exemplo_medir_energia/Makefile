@@ -23,7 +23,7 @@ all: $(TARGET)
 
 # Rule to build the executable
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o $(TARGET) -O2
 
 # Rule to build object files from source files
 .c.o:
