@@ -59,6 +59,13 @@ int main(int argc, char* argv[])
         printf("Tempo de execucao em segundos: %.5f\n", tempo);
         printf("Energia consumida em Joules:   %.5f\n", energy); // (6) imprimir consumo de energia em Joules
     }
+
+    /* Compare results */
+    printf("Index \t Cooley-Tukey Output \t \t Good-Thomas Output \n");
+    for (int i=0; i < 30; i++) {
+        printf("%d: \t %f + %fi \t %f + %fi \n", i, result1[i].re, result1[i].im, 
+                result2[i].re, result2[i].im);
+    }
     
     return 0;
 }
