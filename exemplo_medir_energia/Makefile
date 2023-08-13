@@ -25,7 +25,7 @@ TARGET_O2 = test_o2
 TARGET_O3 = test_o3
 
 # Libraries
-LIBS = -lm
+LIBS = -lm -lfftw3_threads -lfftw3
 
 # Default target (all) - will build the executable
 all: $(TARGET)

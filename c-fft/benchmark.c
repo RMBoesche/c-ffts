@@ -1,4 +1,6 @@
 #include "fft.h"
+#include <complex.h>
+#include <fftw3.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -14,46 +16,69 @@ void timeSubtract(struct timeval *result, struct timeval *t2, struct timeval *t1
 int main(void) {
     struct timeval tvBegin, tvEnd, tvDiff;
 
-    complex * input = (complex*) malloc(sizeof(struct complex_t) * 30);
-    complex * result;
-    
+    struct complex_t* input = (struct complex_t*) malloc(sizeof(struct complex_t) * 30);
+    struct complex_t* result_naive = (struct complex_t*) malloc(sizeof(struct complex_t) * 30);
+    struct complex_t* result_cooley_tukey = (struct complex_t*) malloc(sizeof(struct complex_t) * 30);
+    struct complex_t* result_good_thomas = (struct complex_t*) malloc(sizeof(struct complex_t) * 30);
+    fftw_complex* input2 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 30);   
+    fftw_complex* result_fftw = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 30);
+ 
     /* Init inputs */
     for (int i=0; i < 30; i++) {
         input[i].re = (double) i;
         input[i].im = 0.0;
+        input2[i] = (double)i + 0.0 * I;
     }
 
     /* Naive DFT */
     gettimeofday(&tvBegin, NULL);
     for (int i=0; i < 10000; i++) {
-        result = DFT_naive(input, 30);
+        result_naive = DFT_naive(input, 30);
     }
     gettimeofday(&tvEnd, NULL);
 
     timeSubtract(&tvDiff, &tvEnd, &tvBegin);
-    printf("100000 x Naive: \t %ld.%d\n", tvDiff.tv_sec, tvDiff.tv_usec);
+    printf("100000 x Naive: \t %ld.%06ld\n", tvDiff.tv_sec, tvDiff.tv_usec);
   
     
     /* Cooley-Tukey */
     gettimeofday(&tvBegin, NULL);
     for (int i=0; i < 10000; i++) {
-        result = FFT_CooleyTukey(input, 30, 6, 5);
+        result_cooley_tukey = FFT_CooleyTukey(input, 30, 6, 5);
     }
     gettimeofday(&tvEnd, NULL);
 
     timeSubtract(&tvDiff, &tvEnd, &tvBegin);
-    printf("100000 x Cooley-Tukey: \t %ld.%d\n", tvDiff.tv_sec, tvDiff.tv_usec);
+    printf("100000 x Cooley-Tukey: \t %ld.%06ld\n", tvDiff.tv_sec, tvDiff.tv_usec);
 
     /* Good-Thomas */
     gettimeofday(&tvBegin, NULL);
     for (int i=0; i < 10000; i++) {
-        result = FFT_GoodThomas(input, 30, 6, 5);
+        result_good_thomas = FFT_GoodThomas(input, 30, 6, 5);
     }
     gettimeofday(&tvEnd, NULL);
 
     timeSubtract(&tvDiff, &tvEnd, &tvBegin);
-    printf("100000 x Good-Thomas: \t %ld.%d\n", tvDiff.tv_sec, tvDiff.tv_usec);
+    printf("100000 x Good-Thomas: \t %ld.%06ld\n", tvDiff.tv_sec, tvDiff.tv_usec);
 
+    /* FFTW */
+    fftw_plan plan = fftw_plan_dft_1d(30, input2, result_fftw, FFTW_FORWARD, FFTW_ESTIMATE);
+    gettimeofday(&tvBegin, NULL);
+    for (int i=0; i < 10000; i++) {
+        fftw_execute(plan);
+    }
+    gettimeofday(&tvEnd, NULL);
+    fftw_destroy_plan(plan);
+
+    timeSubtract(&tvDiff, &tvEnd, &tvBegin);
+    printf("100000 x FFTW: \t %ld.%06ld\n", tvDiff.tv_sec, tvDiff.tv_usec);
+
+
+    free(input);
+    free(result_naive);
+    free(result_cooley_tukey);
+    free(result_good_thomas);
+    fftw_free(input2); fftw_free(result_fftw);
     return 0;
 }
 

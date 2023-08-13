@@ -1,40 +1,49 @@
 /*
-* EXEMPLO: Multiplicação de matriz medindo consumo de energia e tempo de execução
+* EXEMPLO: Multiplicaï¿½ï¿½o de matriz medindo consumo de energia e tempo de execuï¿½ï¿½o
 *
 * Arquivo com exemplo de como utilizar a biblioteca para ler consumo de energia.
 *
 * COMO COMPILAR usando a lib para ler consumo de energia:  
 * $ gcc exemplo.c energia.c -o mmatriz
 * onde:
-*   "exemplo.c" é o arquivo da sua aplicação
-*   "energia.c" é o arquivo com o código da lib do RAPL (deve estar no mesmo diretório)
-*   "mmatriz" é o nome do arquivo executável de saida
+*   "exemplo.c" ï¿½ o arquivo da sua aplicaï¿½ï¿½o
+*   "energia.c" ï¿½ o arquivo com o cï¿½digo da lib do RAPL (deve estar no mesmo diretï¿½rio)
+*   "mmatriz" ï¿½ o nome do arquivo executï¿½vel de saida
 *
-* Obs. IMPORTANTE: os contadores de energia não tem precisão para execuções com tempo menor que 0.001 segundos. 
+* Obs. IMPORTANTE: os contadores de energia nï¿½o tem precisï¿½o para execuï¿½ï¿½es com tempo menor que 0.001 segundos. 
 */
 
-/* (1) Incluir Header file para ter acesso as funções para ter o consumo de energia */
+/* (1) Incluir Header file para ter acesso as funï¿½ï¿½es para ter o consumo de energia */
 #include "energia.h" 
 #include "../c-fft/fft.h"
+#include <complex.h>
+#include <fftw3.h>
 
-#define NUM_ALG 2
+#define NUM 9999
+#define NUM_ALG 3
 
 void initialize_matrices();
 void multiply_matrices();
 
 int main(int argc, char* argv[])
 {
-    complex * input1 = (complex*) malloc(sizeof(struct complex_t) * 9999);
-    complex * input2 = (complex*) malloc(sizeof(struct complex_t) * 9999);
-    complex * result1, * result2;
-    
+    struct complex_t* input1 = (struct complex_t*) malloc(sizeof(struct complex_t) * NUM);
+    struct complex_t* input2 = (struct complex_t*) malloc(sizeof(struct complex_t) * NUM);
+    struct complex_t* result1 = (struct complex_t*) malloc(sizeof(struct complex_t) * NUM);
+    struct complex_t* result2 = (struct complex_t*) malloc(sizeof(struct complex_t) * NUM);
+    fftw_complex* input3 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * NUM);
+    fftw_complex* result3 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * NUM);
+   
     /* Init inputs */
-    for (int i=0; i < 9999; i++) {
+    for (int i=0; i < NUM; i++) {
         input1[i].re = (double) i;
         input1[i].im = 0.0;
         input2[i].re = (double) i;
         input2[i].im = 0.0;
-    }
+        input3[i] = (double)i + 0.0 * I;
+    }    
+
+    fftw_plan plan = fftw_plan_dft_1d(NUM, input3, result3, FFTW_FORWARD, FFTW_ESTIMATE);
 
     rapl_init();
 
@@ -42,14 +51,18 @@ int main(int argc, char* argv[])
         /* (2) chamar esta funcao no inicio do main para inicializar a lib do RAPL */
         start_rapl_sysfs(); // (3) Iniciar a contagem de consumo de energia
         clock_t t = clock(); // Iniciar a contagem de tempo
-        /* (4) Chamar aqui a função que faz o que você deseja medir o tempo e a energia */
+        /* (4) Chamar aqui a funï¿½ï¿½o que faz o que vocï¿½ deseja medir o tempo e a energia */
         switch (i) {
             case 0: 
-                result1 = FFT_CooleyTukey(input1, 9999, 101, 99);
+                result1 = FFT_CooleyTukey(input1, NUM, 101, 99);
             break;
 
             case 1:
-                result2 = FFT_GoodThomas(input2, 9999, 101, 99);
+                result2 = FFT_GoodThomas(input2, NUM, 101, 99);
+            break;
+
+            case 2:
+                fftw_execute(plan);
             break;
         }
         /*************************************************/
@@ -59,14 +72,16 @@ int main(int argc, char* argv[])
         printf("Tempo de execucao em segundos: %.5f\n", tempo);
         printf("Energia consumida em Joules:   %.5f\n", energy); // (6) imprimir consumo de energia em Joules
     }
-
+    fftw_destroy_plan(plan);
     /* Compare results */
-    printf("Index \t Cooley-Tukey Output \t \t Good-Thomas Output \n");
-    for (int i=0; i < 30; i++) {
-        printf("%d: \t %f + %fi \t %f + %fi \n", i, result1[i].re, result1[i].im, 
-                result2[i].re, result2[i].im);
+    printf("Index \t Cooley-Tukey Output \t \t Good-Thomas Output \t \t FFTW Output \n");
+    for (int i=0; i < NUM; i++) {
+        printf("%d: \t %f + %fi \t %f + %fi \t %f + %fi \n", 
+                i, result1[i].re, result1[i].im, 
+                   result2[i].re, result2[i].im, 
+                   creal(result3[i]), cimag(result3[i]));
     }
-    
+    fftw_free(input3); fftw_free(result3);
     return 0;
 }
 
