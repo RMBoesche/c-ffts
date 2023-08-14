@@ -13,7 +13,7 @@ CFLAGS_O2 = -O2
 CFLAGS_O3 = -O3
 
 # Source files
-SRCS = exemplo.c energia.c ../c-fft/fft.c ../c-fft/complex.c
+SRCS = exemplo.c energia.c ../c-fft/fft.c ../c-fft/complex.c ../c-fft/pocketfft.c
 
 # Object files
 OBJS = $(SRCS:.c=.o)
@@ -25,7 +25,7 @@ TARGET_O2 = test_o2
 TARGET_O3 = test_o3
 
 # Libraries
-LIBS = -lm -lfftw3_threads -lfftw3
+LIBS = -lm -lfftw3_threads -lfftw3 -ldl 
 
 # Default target (all) - will build the executable
 all: $(TARGET)

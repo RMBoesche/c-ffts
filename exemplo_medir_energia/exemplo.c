@@ -16,11 +16,12 @@
 /* (1) Incluir Header file para ter acesso as fun��es para ter o consumo de energia */
 #include "energia.h" 
 #include "../c-fft/fft.h"
+#include "../c-fft/pocketfft.h"
 #include <complex.h>
 #include <fftw3.h>
 
 #define NUM 9999
-#define NUM_ALG 3
+#define NUM_ALG 4
 
 void initialize_matrices();
 void multiply_matrices();
@@ -33,7 +34,8 @@ int main(int argc, char* argv[])
     struct complex_t* result2 = (struct complex_t*) malloc(sizeof(struct complex_t) * NUM);
     fftw_complex* input3 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * NUM);
     fftw_complex* result3 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * NUM);
-   
+    double result4[2*NUM];
+
     /* Init inputs */
     for (int i=0; i < NUM; i++) {
         input1[i].re = (double) i;
@@ -41,9 +43,12 @@ int main(int argc, char* argv[])
         input2[i].re = (double) i;
         input2[i].im = 0.0;
         input3[i] = (double)i + 0.0 * I;
+        result4[2*i] = (double) i;
+        result4[2*i+1] = 0.0;
     }    
 
     fftw_plan plan = fftw_plan_dft_1d(NUM, input3, result3, FFTW_FORWARD, FFTW_ESTIMATE);
+    cfft_plan pocketplan = make_cfft_plan(NUM);
 
     rapl_init();
 
@@ -64,6 +69,10 @@ int main(int argc, char* argv[])
             case 2:
                 fftw_execute(plan);
             break;
+
+            case 3:
+                cfft_forward(pocketplan, result4, 1.);
+            break;
         }
         /*************************************************/
         t = clock() - t; // Finalizar contagem do tempo
@@ -73,13 +82,15 @@ int main(int argc, char* argv[])
         printf("Energia consumida em Joules:   %.5f\n", energy); // (6) imprimir consumo de energia em Joules
     }
     fftw_destroy_plan(plan);
+    destroy_cfft_plan(pocketplan);
     /* Compare results */
-    printf("Index \t Cooley-Tukey Output \t \t Good-Thomas Output \t \t FFTW Output \n");
+    printf("Index \t Cooley-Tukey Output \t \t Good-Thomas Output \t \t FFTW Output \t \t PocketFFT Output \\n");
     for (int i=0; i < NUM; i++) {
-        printf("%d: \t %f + %fi \t %f + %fi \t %f + %fi \n", 
+        printf("%d: \t %f + %fi \t %f + %fi \t %f + %fi \t %f + %fi \n", 
                 i, result1[i].re, result1[i].im, 
                    result2[i].re, result2[i].im, 
-                   creal(result3[i]), cimag(result3[i]));
+                   creal(result3[i]), cimag(result3[i]),
+                   result4[2*i], result4[2*i+1]);
     }
     fftw_free(input3); fftw_free(result3);
     return 0;

@@ -1,4 +1,5 @@
 #include "fft.h"
+#include "pocketfft.h"
 #include <complex.h>
 #include <fftw3.h>
 #include <stdio.h>
@@ -22,12 +23,15 @@ int main(void) {
     struct complex_t* result_good_thomas = (struct complex_t*) malloc(sizeof(struct complex_t) * 30);
     fftw_complex* input2 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 30);   
     fftw_complex* result_fftw = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 30);
- 
+    double input3[2*30];
+
     /* Init inputs */
     for (int i=0; i < 30; i++) {
         input[i].re = (double) i;
         input[i].im = 0.0;
         input2[i] = (double)i + 0.0 * I;
+        input3[2*i] = (double) i;
+        input3[2*i+1] = 0.0;
     }
 
     /* Naive DFT */
@@ -68,10 +72,22 @@ int main(void) {
         fftw_execute(plan);
     }
     gettimeofday(&tvEnd, NULL);
-    fftw_destroy_plan(plan);
-
+    fftw_destroy_plan(plan);    
+    
     timeSubtract(&tvDiff, &tvEnd, &tvBegin);
     printf("100000 x FFTW: \t %ld.%06ld\n", tvDiff.tv_sec, tvDiff.tv_usec);
+
+    /* PocketFFT*/
+    cfft_plan pocketplan = make_cfft_plan(30);
+    gettimeofday(&tvBegin, NULL);
+    for (int i=0; i < 10000; i++) {
+        cfft_forward(pocketplan, input3, 1.);
+    }
+    gettimeofday(&tvEnd, NULL);
+    destroy_cfft_plan(pocketplan);
+
+    timeSubtract(&tvDiff, &tvEnd, &tvBegin);
+    printf("100000 x PocketFFT: \t %ld.%06ld\n", tvDiff.tv_sec, tvDiff.tv_usec);
 
 
     free(input);
