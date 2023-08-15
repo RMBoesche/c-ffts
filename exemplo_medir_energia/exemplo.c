@@ -10,7 +10,7 @@
 *   "energia.c" � o arquivo com o c�digo da lib do RAPL (deve estar no mesmo diret�rio)
 *   "mmatriz" � o nome do arquivo execut�vel de saida
 *
-* Obs. IMPORTANTE: os contadores de energia n�o tem precis�o para execu��es com tempo menor que 0.001 segundos. 
+* Obs. IMPORTANTE: os contadores de energia n�o tem precis�o para execu��es com tempo menor que im_rand01 segundos. 
 */
 
 /* (1) Incluir Header file para ter acesso as fun��es para ter o consumo de energia */
@@ -19,6 +19,9 @@
 #include "../c-fft/pocketfft.h"
 #include <complex.h>
 #include <fftw3.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h> 
 
 #define NUM 9999
 #define NUM_ALG 4
@@ -34,17 +37,24 @@ int main(int argc, char* argv[])
     struct complex_t* result2 = (struct complex_t*) malloc(sizeof(struct complex_t) * NUM);
     fftw_complex* input3 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * NUM);
     fftw_complex* result3 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * NUM);
-    double result4[2*NUM];
+    double input4[2*NUM];
 
+
+
+
+    srand(time(NULL));
     /* Init inputs */
     for (int i=0; i < NUM; i++) {
-        input1[i].re = (double) i;
-        input1[i].im = 0.0;
-        input2[i].re = (double) i;
-        input2[i].im = 0.0;
-        input3[i] = (double)i + 0.0 * I;
-        result4[2*i] = (double) i;
-        result4[2*i+1] = 0.0;
+        double re_rand = rand();
+        double im_rand = rand();
+        
+        input1[i].re = (double) re_rand;
+        input1[i].im = im_rand;
+        input2[i].re = (double) re_rand;
+        input2[i].im = im_rand;
+        input3[i] = (double)re_rand + im_rand * I;
+        input4[2*i] = (double) re_rand;
+        input4[2*i+1] = im_rand;
     }    
 
     fftw_plan plan = fftw_plan_dft_1d(NUM, input3, result3, FFTW_FORWARD, FFTW_ESTIMATE);
@@ -71,7 +81,7 @@ int main(int argc, char* argv[])
             break;
 
             case 3:
-                cfft_forward(pocketplan, result4, 1.);
+                cfft_forward(pocketplan, input4, 1.);
             break;
         }
         /*************************************************/
@@ -90,7 +100,7 @@ int main(int argc, char* argv[])
                 i, result1[i].re, result1[i].im, 
                    result2[i].re, result2[i].im, 
                    creal(result3[i]), cimag(result3[i]),
-                   result4[2*i], result4[2*i+1]);
+                   input4[2*i], input4[2*i+1]);
     }
     fftw_free(input3); fftw_free(result3);
     return 0;
