@@ -10,7 +10,7 @@
 *   "energia.c" � o arquivo com o c�digo da lib do RAPL (deve estar no mesmo diret�rio)
 *   "mmatriz" � o nome do arquivo execut�vel de saida
 *
-* Obs. IMPORTANTE: os contadores de energia n�o tem precis�o para execu��es com tempo menor que im_rand01 segundos. 
+* Obs. IMPORTANTE: os contadores de energia n�o tem precis�o para execu��es com tempo menor que im01 segundos. 
 */
 
 /* (1) Incluir Header file para ter acesso as fun��es para ter o consumo de energia */
@@ -39,22 +39,19 @@ int main(int argc, char* argv[])
     fftw_complex* result3 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * NUM);
     double input4[2*NUM];
 
-
-
-
     srand(time(NULL));
     /* Init inputs */
     for (int i=0; i < NUM; i++) {
-        double re_rand = rand();
-        double im_rand = rand();
+        double re = i;
+        double im = i;
         
-        input1[i].re = (double) re_rand;
-        input1[i].im = im_rand;
-        input2[i].re = (double) re_rand;
-        input2[i].im = im_rand;
-        input3[i] = (double)re_rand + im_rand * I;
-        input4[2*i] = (double) re_rand;
-        input4[2*i+1] = im_rand;
+        input1[i].re = (double) re;
+        input1[i].im = im;
+        input2[i].re = (double) re;
+        input2[i].im = im;
+        input3[i] = (double)re + im * I;
+        input4[2*i] = (double) re;
+        input4[2*i+1] = im;
     }    
 
     fftw_plan plan = fftw_plan_dft_1d(NUM, input3, result3, FFTW_FORWARD, FFTW_ESTIMATE);
@@ -88,20 +85,21 @@ int main(int argc, char* argv[])
         t = clock() - t; // Finalizar contagem do tempo
         double energy = end_rapl_sysfs();   // (5) Finalizar a contagem dos contadores de energia
         double tempo = ((double)t)/CLOCKS_PER_SEC; // transforma tempo para segundos
-        printf("Tempo de execucao em segundos: %.5f\n", tempo);
-        printf("Energia consumida em Joules:   %.5f\n", energy); // (6) imprimir consumo de energia em Joules
+        printf("Tempo [s]:\t %.10f\n", tempo);
+        printf("Energia [J]:\t %.10f\n\n", energy); // (6) imprimir consumo de energia em Joules
     }
     fftw_destroy_plan(plan);
     destroy_cfft_plan(pocketplan);
     /* Compare results */
-    printf("Index \t Cooley-Tukey Output \t \t Good-Thomas Output \t \t FFTW Output \t \t PocketFFT Output \\n");
-    for (int i=0; i < NUM; i++) {
-        printf("%d: \t %f + %fi \t %f + %fi \t %f + %fi \t %f + %fi \n", 
-                i, result1[i].re, result1[i].im, 
-                   result2[i].re, result2[i].im, 
-                   creal(result3[i]), cimag(result3[i]),
-                   input4[2*i], input4[2*i+1]);
-    }
+    // printf("Index \t Cooley-Tukey Output \t \t Good-Thomas Output \t \t FFTW Output \t \t PocketFFT Output \\n");
+    // for (int i=0; i < NUM; i++) {
+    //     printf("%d: \t %f + %fi \t %f + %fi \t %f + %fi \t %f + %fi \n", 
+    //             i, result1[i].re, result1[i].im, 
+    //                result2[i].re, result2[i].im, 
+    //                creal(result3[i]), cimag(result3[i]),
+    //                input4[2*i], input4[2*i+1]);
+    // }
+
     fftw_free(input3); fftw_free(result3);
     return 0;
 }
